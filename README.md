@@ -31,9 +31,9 @@ around these data structures as they already exist in the Standard Library.
 
 In fact, these components are just aliases for their std counterparts:
 
-  json::string => std::string
-  json::object => std::map<json::string, json::value>
-  json::array => std::vector<json::value>
+- json::string => std::string
+- json::object => std::map&lt;json::string, json::value&gt;
+- json::array => std::vector&lt;json::value&gt;
 
 json::value is the special type that can hold any of the following JSON types:
 
