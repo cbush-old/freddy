@@ -73,6 +73,7 @@ using array = std::vector<value>;
 using number = double;
 
 
+
 std::ostream& operator<<(std::ostream&, object const&);
 std::ostream& operator<<(std::ostream&, array const&);
 
@@ -192,8 +193,6 @@ namespace detail {
   static const char * const bool_branch[] { "false", "true" };
   static const char * const comma_branch[] { "", ", " };
 
-  class null_t {};
-
   class value_t {
     public:
       value_t(){}
@@ -215,19 +214,21 @@ namespace detail {
 
   class number_wrapper : public value_t {
     private:
-      number _value;
+      number *_value;
 
     public:
-      number_wrapper(number v):_value(v){}
-      ~number_wrapper(){}
+      number_wrapper(number v):_value(new number(v)){}
+      ~number_wrapper(){
+        delete _value;
+      }
 
     public:
       bool is_number() const { return true; }
-      number const& get_number() const { return _value; }
-      number& get_number() { return _value; }
+      number const& get_number() const { return *_value; }
+      number& get_number() { return *_value; }
       string json() const {
         std::stringstream ss;
-        ss << _value;
+        ss << *_value;
         return ss.str();
       }
 
@@ -328,12 +329,6 @@ namespace detail {
  **/
 
 
-/**
- * @brief global object paradoxically representing null
- **/
-const detail::null_t null;
-
-
 enum JSON_TYPE {
   JSON_ARRAY,
   JSON_BOOL,
@@ -357,6 +352,7 @@ class value {
      * Construct an empty value
      **/
     value(){}
+
 
     ////////////////////////////////////////// Array
     /**
@@ -386,17 +382,6 @@ class value {
     value(bool x)
       : _value(new detail::bool_wrapper(x))
       , _type(JSON_BOOL)
-      {}
-
-
-    ////////////////////////////////////////// Null
-    /**
-     * Construct a null value
-     * @param null the global @ref json::null object
-     **/
-    value(detail::null_t const& null)
-      : _value(new detail::null_wrapper())
-      , _type(JSON_NULL)
       {}
 
 
@@ -511,6 +496,7 @@ class value {
     inline bool is_array() const { return _value->is_array(); }
     array const& get_array() const { return _value->get_array(); }
     array& get_array() { return _value->get_array(); }
+    explicit operator array&() { return _value->get_array(); } 
 
     /**
      * @return true if the value represents a bool
