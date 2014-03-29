@@ -1,2 +1,2 @@
 all:
-	g++ -std=c++11 *.cpp -Wall;
+	g++ -std=c++11 test.cpp -Wall -o test-json

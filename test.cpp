@@ -1,6 +1,5 @@
 #include <iostream>
-#include <fstream>
-#include "json.h"
+#include "json.hpp"
 
 int main() {
   auto v = json::parse(std::cin);
