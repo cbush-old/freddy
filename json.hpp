@@ -80,82 +80,8 @@ using array = std::vector<value>;
 using number = double;
 
 
-
 std::ostream& operator<<(std::ostream&, object const&);
 std::ostream& operator<<(std::ostream&, array const&);
-
-
-/**
- * @brief Interface of json string-like classes.
- **/
-class stringlike {
-  public:
-    virtual ~stringlike(){}
-    virtual string json() const { 
-      return string("\"").append(to_json_string()).append("\"");
-    }
-
-    /**
-     * @return a string representation of this instance.
-     **/
-    virtual string to_json_string() const =0;
-};
-
-
-/**
- * @brief Interface of json object-like classes.
- **/
-class objectlike {
-  public:
-    virtual ~objectlike(){}
-
-    /**
-     * @return a representation of this instance as a json::object (i.e. std::map<string, json::value>).
-     **/
-    virtual object const& to_json_object() const =0;
-};
-
-
-/**
- * @brief Interface of json array-like classes.
- **/
-class arraylike {
-  public:
-    virtual ~arraylike(){}
-
-    /**
-     * @return a representation of this instance as a json::array (i.e. std::vector<json::value>).
-     **/
-    virtual array const& to_json_array() const =0;
-};
-
-
-/**
- * @brief basic exception related to json operations
- **/
-struct exception : public std::exception {
-  protected:
-    string msg;
-  
-  public:
-    exception(const char * msg)
-      : msg(msg)
-      {}
-
-    exception(std::string const& msg)
-      : msg(msg)
-      {}
-
-    virtual ~exception(){}
-
-    /**
-     * @return An message describing the exception.
-     **/
-    virtual const char * what() const noexcept {
-      return msg.c_str();
-    }
-
-};
 
 
 /**
@@ -194,6 +120,122 @@ string unescape(string const& value) {
 
 
 /**
+ * @brief Interface of json string-like classes.
+ **/
+class stringlike {
+  public:
+    virtual ~stringlike(){}
+
+    /**
+     * @return an unescaped string representation of this instance.
+     **/
+    virtual string to_json_string() const =0;
+};
+
+
+/**
+ * @brief Interface of json object-like classes.
+ **/
+class objectlike {
+  public:
+    virtual ~objectlike(){}
+
+    /**
+     * @return a representation of this instance as a json::object (i.e. std::map<string, json::value>).
+     **/
+    virtual object const& to_json_object() const =0;
+};
+
+
+/**
+ * @brief Interface of json array-like classes.
+ **/
+class arraylike {
+  public:
+    virtual ~arraylike(){}
+
+    /**
+     * @return a representation of this instance as a json::array (i.e. std::vector<json::value>).
+     **/
+    virtual array const& to_json_array() const =0;
+};
+
+
+/**
+ * @brief basic exception related to json operations
+ **/
+class exception : public std::exception {
+  protected:
+    std::string msg;
+
+  public:
+    /**
+     * @brief construct an empty exception (not recommended, but meh)
+     **/
+    exception(){}
+
+    /**
+     * @brief construct a general json exception with a given message
+     * @param msg detail about the exception
+     **/
+    exception(const char * msg)
+      : msg(msg)
+      {}
+
+    /**
+     * @brief construct a general json exception with a given message
+     * @param msg detail about the exception
+     **/
+    exception(std::string const& msg)
+      : msg(msg)
+      {}
+
+    virtual ~exception(){}
+
+    /**
+     * @return An message describing the exception.
+     **/
+    virtual const char * what() const noexcept {
+      return msg.c_str();
+    }
+
+};
+
+
+/**
+ * @brief an exception for malformed json
+ **/
+class bad_json : public exception {
+  public:
+    /**
+     * @brief construct a default bad json exception
+     **/
+    bad_json()
+      : exception("bad json exception: malformed json")
+      {}
+
+    /**
+     * @brief construct a bad json exception with a given message
+     * @param msg detail about the exception
+     **/
+    bad_json(const char * msg)
+      : exception(msg)
+      {}
+
+    /**
+     * @brief construct a bad json exception with a given message
+     * @param msg detail about the exception
+     **/
+    bad_json(std::string const& msg)
+      : exception(msg)
+      {}
+
+    ~bad_json(){}
+
+};
+
+
+/**
  * @cond detail
  **/
 namespace detail {
@@ -225,7 +267,8 @@ namespace detail {
       number *_value;
 
     public:
-      number_wrapper(number v):_value(new number(v)){}
+      number_wrapper(int v):_value(new number(v)){}
+      number_wrapper(double v):_value(new number(v)){}
       ~number_wrapper(){
         delete _value;
       }
@@ -652,10 +695,9 @@ string parse_string(Iterator& cur, Iterator const& end) {
   string rv;
   for(bool esc = false; cur != end; ++cur){
     if(*cur == '"' && !esc)
-      return rv;
-    else if (*cur == '\\')
-      esc = !esc;
-    else
+      return rv; 
+    esc = *cur == '\\' && !esc;
+    if (!esc)
       rv += *cur;
   }
   throw exception(string("bad string: ") + rv);
