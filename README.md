@@ -24,7 +24,7 @@ From json.org:
   programming languages support them in one form or another."
 
 It seems many JSON libraries overcomplicate things by re-implementing
-these standard data types, causing them to be bloated and infectuous.
+these standard data types, causing them to be bloated and infectious.
 
 By contrast, this library aims to be non-intrusive, wrapping transparently 
 around these data structures as they already exist in the Standard Library.
