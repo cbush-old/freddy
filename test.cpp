@@ -1,8 +1,10 @@
 #include <iostream>
-#include "json.hpp"
+#include "json.h"
 
 int main() {
-  auto v = json::parse(std::cin);
+  std::string s;
+  std::cin >> s;
+  auto v = json::parse(s);
   std::cout << v << "\n";
 }
 
