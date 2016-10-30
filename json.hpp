@@ -40,7 +40,7 @@ freely, subject to the following restrictions:
 #include <iostream>
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <sstream>
 #include <iterator>
@@ -62,9 +62,9 @@ using string = std::string;
 
 
 /**
- * @brief The json object is really a std::map<string, @ref value>
+ * @brief The json object is really a std::unordered_map<string, @ref value>
  **/
-using object = std::map<string, value>;
+using object = std::unordered_map<string, value>;
 
 
 /**
