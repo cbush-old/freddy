@@ -37,12 +37,13 @@ freely, subject to the following restrictions:
  */
 
 #include <iostream>
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include <iterator>
+#include <map>
 #include <memory>
 #include <sstream>
-#include <iterator>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 /**
  * @brief contains classes and functions for handling json
@@ -973,7 +974,22 @@ value parse(std::basic_istream<T> &istream)
 }
 
 template<typename T>
-struct info;
+T get(value const &source);
+
+template<typename T>
+struct info
+{
+    static bool is(value const &source)
+    {
+        return std::is_convertible<value, T>();
+    }
+
+    static T get(value const &source)
+    {
+        assert(is(source));
+        return T(source);
+    }
+};
 
 #define SPECIALIZE_INFO(TYPE, JSON_NAME) \
     template<> \
@@ -984,19 +1000,16 @@ struct info;
             return source.is_##JSON_NAME();\
         } \
         \
-        static bool get(value const &source, TYPE &value_out) \
+        static TYPE get(value const &source) \
         { \
-            if (is(source)) \
-            { \
-                value_out = source.get_##JSON_NAME(); \
-                return true; \
-            } \
-            return false; \
+            assert(is(source)); \
+            return static_cast<TYPE>(source.get_##JSON_NAME()); \
         } \
     };
 
 
 SPECIALIZE_INFO(string, string);
+SPECIALIZE_INFO(bool, bool);
 SPECIALIZE_INFO(float, number);
 SPECIALIZE_INFO(double, number);
 SPECIALIZE_INFO(int8_t, number);
@@ -1008,12 +1021,105 @@ SPECIALIZE_INFO(uint16_t, number);
 SPECIALIZE_INFO(uint32_t, number);
 SPECIALIZE_INFO(uint64_t, number);
 
-#undef SPECIALIZE_IS
+template<typename ArrayType>
+struct array_info
+{
+    using value_type = typename ArrayType::value_type;
+
+    static bool is(value const &source)
+    {
+        if (!source.is_array())
+        {
+            return false;
+        }
+        auto const &array = source.get_array();
+        return std::find_if_not(array.begin(), array.end(), &info<value_type>::is) == array.end();
+    }
+    
+    static ArrayType get(value const &source)
+    {
+        assert(is(source));
+        auto const &array = source.get_array();
+        ArrayType rv;
+        rv.reserve(array.size());
+        std::transform(array.begin(), array.end(), std::back_inserter(rv), &json::get<value_type>);
+        return rv;
+    }
+};
+
+template<typename T, typename Allocator>
+struct info<std::vector<T, Allocator>> : array_info<std::vector<T, Allocator>>
+{};
+
+template<typename MapType>
+struct map_info
+{
+    using key_type = typename MapType::key_type;
+    using mapped_type = typename MapType::mapped_type;
+
+    static bool is(value const &source)
+    {
+        if (!source.is_object())
+        {
+            return false;
+        }
+        if (!std::is_convertible<key_type, string>::value)
+        {
+            return false;
+        }
+        auto const &object = source.get_object();
+        return std::find_if_not(object.begin(), object.end(), [](std::pair<string, value> const &pair)
+        {
+            return info<mapped_type>::is(pair.second);
+        }) == object.end();
+    }
+    
+    static MapType get(value const &source)
+    {
+        assert(is(source));
+        auto const &object = source.get_object();
+        MapType map;
+        map.reserve(object.size());
+        for (auto const &pair : object)
+        {
+            map.emplace(pair.first, json::get<mapped_type>(pair.second));
+        }
+        return map;
+    }
+};
+
+
+template<typename Key, typename T, typename Compare, typename Allocator>
+struct info<std::map<Key, T, Compare, Allocator>> : map_info<std::map<Key, T, Compare, Allocator>>
+{};
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+struct info<std::unordered_map<Key, T, Hash, KeyEqual, Allocator>> : map_info<std::unordered_map<Key, T, Hash, KeyEqual, Allocator>>
+{};
+
+#undef SPECIALIZE_INFO
+
+template<typename T>
+bool is(value const &source)
+{
+    return info<T>::is(source);
+}
 
 template<typename T>
 bool get(value const &source, T &value_out)
 {
-    return info<T>::get(source, value_out);
+    if (!info<T>::is(source))
+    {
+        return false;
+    }
+    value_out = info<T>::get(source);
+    return true;
+}
+
+template<typename T>
+T get(value const &source)
+{
+    return info<T>::get(source);
 }
 
 template<typename T>
@@ -1030,7 +1136,8 @@ bool get_member(value const &source, string const &key, T &value_out)
     {
         return false;
     }
-    return info<T>::get(it->second, value_out);
+    
+    return get(it->second, value_out);
 }
 
 
