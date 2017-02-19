@@ -7,7 +7,7 @@ freddy
 A thin C++11 STL wrapper for reading/writing JSON
 
 
-Copyright (c) 2014 Chris Bush
+Copyright (c) 2014-2017 Chris Bush
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -36,7 +36,6 @@ freely, subject to the following restrictions:
  *
  */
 
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -45,33 +44,28 @@ freely, subject to the following restrictions:
 #include <sstream>
 #include <iterator>
 
-
 /**
  * @brief contains classes and functions for handling json
  **/
-namespace json {
-
+namespace json
+{
 
 class value;
-
 
 /**
  * @brief The string type is really a std::string
  **/
 using string = std::string;
 
-
 /**
  * @brief The json object is really a std::unordered_map<string, @ref value>
  **/
 using object = std::unordered_map<string, value>;
 
-
 /**
  * @brief The array is really a std::vector<@ref value>
  **/
 using array = std::vector<value>;
-
 
 /**
  * @brief The number is really a double
@@ -79,354 +73,401 @@ using array = std::vector<value>;
  **/
 using number = double;
 
-
-std::ostream& operator<<(std::ostream&, object const&);
-std::ostream& operator<<(std::ostream&, array const&);
-
+std::ostream &operator<<(std::ostream &, object const &);
+std::ostream &operator<<(std::ostream &, array const &);
 
 /**
  * @brief Create an escaped string from an unescaped string.
  * @param value an unescaped string
  * @return an escaped string
  **/
-inline
-string escape(string const& value) {
-  std::stringstream ss;
-  for(auto& c : value){
-    if(c == '"' // TODO: other escapes
-    || c == '\\')
-      ss << '\\';
-    ss << c;
-  }
-  return ss.str();
+inline string escape(string const &value)
+{
+    std::stringstream ss;
+    for (auto &c : value)
+    {
+        if (c == '"' // TODO: other escapes
+            || c == '\\')
+            ss << '\\';
+        ss << c;
+    }
+    return ss.str();
 }
-
 
 /**
  * @brief Create an unescaped string from an escaped string.
  * @param value an escaped string
  * @return an unescaped string
  **/
-inline
-string unescape(string const& value) {
-  std::stringstream ss;
-  for(const char * c = value.data(); *c != '\0'; ++c) {
-    if(*c == '\\')
-      ++c;
-    ss << *c;
-  }
-  return ss.str();
+inline string unescape(string const &value)
+{
+    std::stringstream ss;
+    for (const char *c = value.data(); *c != '\0'; ++c)
+    {
+        if (*c == '\\')
+            ++c;
+        ss << *c;
+    }
+    return ss.str();
 }
-
 
 /**
  * @brief Interface of json string-like classes.
  **/
-class stringlike {
-  public:
-    virtual ~stringlike(){}
+class stringlike
+{
+public:
+    virtual ~stringlike() {}
 
     /**
      * @return an unescaped string representation of this instance.
      **/
-    virtual string to_json_string() const =0;
+    virtual string to_json_string() const = 0;
 };
-
 
 /**
  * @brief Interface of json object-like classes.
  **/
-class objectlike {
-  public:
-    virtual ~objectlike(){}
+class objectlike
+{
+public:
+    virtual ~objectlike() {}
 
     /**
      * @return a representation of this instance as a json::object (i.e. std::map<string, json::value>).
      **/
-    virtual object const& to_json_object() const =0;
+    virtual object const &to_json_object() const = 0;
 };
-
 
 /**
  * @brief Interface of json array-like classes.
  **/
-class arraylike {
-  public:
-    virtual ~arraylike(){}
+class arraylike
+{
+public:
+    virtual ~arraylike() {}
 
     /**
      * @return a representation of this instance as a json::array (i.e. std::vector<json::value>).
      **/
-    virtual array const& to_json_array() const =0;
+    virtual array const &to_json_array() const = 0;
 };
-
 
 /**
  * @brief basic exception related to json operations
  **/
-class exception : public std::exception {
-  protected:
+class exception : public std::exception
+{
+protected:
     std::string msg;
 
-  public:
+public:
     /**
      * @brief construct an empty exception (not recommended, but meh)
      **/
-    exception(){}
+    exception() {}
 
     /**
      * @brief construct a general json exception with a given message
      * @param msg detail about the exception
      **/
-    exception(const char * msg)
-      : msg(msg)
-      {}
+    exception(const char *msg)
+        : msg(msg)
+    {
+    }
 
     /**
      * @brief construct a general json exception with a given message
      * @param msg detail about the exception
      **/
-    exception(std::string const& msg)
-      : msg(msg)
-      {}
+    exception(std::string const &msg)
+        : msg(msg)
+    {
+    }
 
-    virtual ~exception(){}
+    virtual ~exception() {}
 
     /**
      * @return An message describing the exception.
      **/
-    virtual const char * what() const noexcept {
-      return msg.c_str();
+    virtual const char *what() const noexcept
+    {
+        return msg.c_str();
     }
-
 };
-
 
 /**
  * @brief an exception for malformed json
  **/
-class bad_json : public exception {
-  public:
+class bad_json : public exception
+{
+public:
     /**
      * @brief construct a default bad json exception
      **/
     bad_json()
-      : exception("bad json exception: malformed json")
-      {}
+        : exception("bad json exception: malformed json")
+    {
+    }
 
     /**
      * @brief construct a bad json exception with a given message
      * @param msg detail about the exception
      **/
-    bad_json(const char * msg)
-      : exception(msg)
-      {}
+    bad_json(const char *msg)
+        : exception(msg)
+    {
+    }
 
     /**
      * @brief construct a bad json exception with a given message
      * @param msg detail about the exception
      **/
-    bad_json(std::string const& msg)
-      : exception(msg)
-      {}
+    bad_json(std::string const &msg)
+        : exception(msg)
+    {
+    }
 
-    ~bad_json(){}
-
+    ~bad_json() {}
 };
-
 
 /**
  * @cond detail
  **/
-namespace detail {
+namespace detail
+{
 
-  static const char * const bool_branch[] { "false", "true" };
-  static const char * const comma_branch[] { "", ", " };
+static const char *const bool_branch[]{ "false", "true" };
+static const char *const comma_branch[]{ "", ", " };
 
-  class value_t {
-    public:
-      value_t(){}
-      virtual ~value_t(){}
-      virtual string json() const =0;
+class value_t
+{
+public:
+    value_t() {}
+    virtual ~value_t() {}
+    virtual string json() const = 0;
 
-      #define JSON_IS(type) \
-        virtual bool is_##type() const { return false; } \
-        virtual type const& get_##type() const { throw exception("invalid cast"); } \
-        virtual type& get_##type() { throw exception("invalid cast"); }
-      JSON_IS(array);
-      JSON_IS(bool);
-      JSON_IS(number);
-      JSON_IS(string);
-      JSON_IS(object);
-      virtual bool is_null() const { return false; }
-      #undef JSON_IS
-  };
+#define JSON_IS(type)                                                           \
+    virtual bool is_##type() const { return false; }                            \
+    virtual type const &get_##type() const { throw exception("invalid cast"); } \
+    virtual type &get_##type() { throw exception("invalid cast"); }
+    JSON_IS(array);
+    JSON_IS(bool);
+    JSON_IS(number);
+    JSON_IS(string);
+    JSON_IS(object);
+    virtual bool is_null() const { return false; }
+#undef JSON_IS
+};
 
-  class number_wrapper : public value_t {
-    private:
-      number *_value;
+class number_wrapper : public value_t
+{
+private:
+    number *_value;
 
-    public:
-      number_wrapper(int v):_value(new number(v)){}
-      number_wrapper(double v):_value(new number(v)){}
-      ~number_wrapper(){
+public:
+    number_wrapper(int v)
+        : _value(new number(v))
+    {
+    }
+    number_wrapper(double v)
+        : _value(new number(v))
+    {
+    }
+    ~number_wrapper()
+    {
         delete _value;
-      }
+    }
 
-    public:
-      bool is_number() const { return true; }
-      number const& get_number() const { return *_value; }
-      number& get_number() { return *_value; }
-      string json() const {
+public:
+    bool is_number() const { return true; }
+    number const &get_number() const { return *_value; }
+    number &get_number() { return *_value; }
+    string json() const
+    {
         std::stringstream ss;
         ss << *_value;
         return ss.str();
-      }
+    }
+};
 
-  };
+class string_wrapper : public value_t
+{
+private:
+    string *_value;
 
-  class string_wrapper : public value_t {
-    private:
-      string *_value;
+public:
+    string_wrapper(const char *v)
+        : _value(new string(v))
+    {
+    }
+    string_wrapper(string const &v)
+        : _value(new string(v))
+    {
+    }
+    string_wrapper(stringlike const &v)
+        : _value(new string(v.to_json_string()))
+    {
+    }
 
-    public:
-      string_wrapper(const char* v):_value(new string(v)){}
-      string_wrapper(string const& v):_value(new string(v)){}
-      string_wrapper(stringlike const& v):_value(new string(v.to_json_string())){}
-
-      ~string_wrapper(){
+    ~string_wrapper()
+    {
         delete _value;
-      }
-    
-    public:
-      bool is_string() const { return true; }
-      string const& get_string() const { return *_value; }
-      string& get_string() { return *_value; }
-      string json() const {
+    }
+
+public:
+    bool is_string() const { return true; }
+    string const &get_string() const { return *_value; }
+    string &get_string() { return *_value; }
+    string json() const
+    {
         std::stringstream ss;
         ss << "\"" << escape(*_value) << "\"";
         return ss.str();
-      }
-  };
+    }
+};
 
-  class array_wrapper : public value_t {
-    private:
-      array *_value;
+class array_wrapper : public value_t
+{
+private:
+    array *_value;
 
-    public:
-      array_wrapper(array const& v):_value(new array(v)){}
-      array_wrapper(arraylike const& v):_value(new array(v.to_json_array())){}
-      ~array_wrapper(){
+public:
+    array_wrapper(array const &v)
+        : _value(new array(v))
+    {
+    }
+    array_wrapper(arraylike const &v)
+        : _value(new array(v.to_json_array()))
+    {
+    }
+    ~array_wrapper()
+    {
         delete _value;
-      }
+    }
 
-    public:
-      bool is_array() const { return true; }
-      array const& get_array() const { return *_value; }
-      array& get_array() { return *_value; }
-      inline string json() const;
-  };
+public:
+    bool is_array() const { return true; }
+    array const &get_array() const { return *_value; }
+    array &get_array() { return *_value; }
+    inline string json() const;
+};
 
-  class object_wrapper : public value_t {
-    private:
-      object *_value;
+class object_wrapper : public value_t
+{
+private:
+    object *_value;
 
-    public:
-      object_wrapper(object const& v):_value(new object(v)){}
-      object_wrapper(objectlike const& v):_value(new object(v.to_json_object())){}
-      ~object_wrapper(){
+public:
+    object_wrapper(object const &v)
+        : _value(new object(v))
+    {
+    }
+    object_wrapper(objectlike const &v)
+        : _value(new object(v.to_json_object()))
+    {
+    }
+    ~object_wrapper()
+    {
         delete _value;
-      }
+    }
 
-    public:
-      bool is_object() const { return true; }
-      inline object const& get_object() const;
-      inline object& get_object();
-      inline string json() const;
-  };
+public:
+    bool is_object() const { return true; }
+    inline object const &get_object() const;
+    inline object &get_object();
+    inline string json() const;
+};
 
-  class bool_wrapper : public value_t {
-    private:
-      bool _value;
+class bool_wrapper : public value_t
+{
+private:
+    bool _value;
 
-    public:
-      bool_wrapper(bool v):_value(v){}
-      ~bool_wrapper(){}
+public:
+    bool_wrapper(bool v)
+        : _value(v)
+    {
+    }
+    ~bool_wrapper() {}
 
-    public:
-      bool const& get_bool() const { return _value; }
-      bool& get_bool() { return _value; }
-      bool is_bool() const { return true; }
-      string json() const {
+public:
+    bool const &get_bool() const { return _value; }
+    bool &get_bool() { return _value; }
+    bool is_bool() const { return true; }
+    string json() const
+    {
         return bool_branch[_value];
-      }
-  };
+    }
+};
 
-  class null_wrapper : public value_t {
-    public:
-      null_wrapper(){}
-      ~null_wrapper(){}
+class null_wrapper : public value_t
+{
+public:
+    null_wrapper() {}
+    ~null_wrapper() {}
 
-    public:
-      bool is_null() const { return true; }
-      string json() const {
+public:
+    bool is_null() const { return true; }
+    string json() const
+    {
         return "null";
-      }
-  };
+    }
+};
 
 } // namespace detail
 /**
  * @endcond detail
  **/
 
-
 /**
  * @brief enumeration of the possible json value types
  **/
-enum ValueType {
-  JSON_ARRAY,
-  JSON_BOOL,
-  JSON_NULL,
-  JSON_NUMBER,
-  JSON_OBJECT,
-  JSON_STRING,
+enum ValueType
+{
+    JSON_ARRAY,
+    JSON_BOOL,
+    JSON_NULL,
+    JSON_NUMBER,
+    JSON_OBJECT,
+    JSON_STRING,
 };
-
 
 /**
  * @brief Represents any json data type.
  **/
-class value {
-  protected:
-    std::shared_ptr<detail::value_t> _value { new detail::null_wrapper() };
-    ValueType _type { JSON_NULL };
+class value
+{
+protected:
+    std::shared_ptr<detail::value_t> _value{ new detail::null_wrapper() };
+    ValueType _type{ JSON_NULL };
 
-  public:
+public:
     /**
      * Construct an empty value
      **/
-    value(){}
-
+    value() {}
 
     ////////////////////////////////////////// Array
     /**
      * Construct a value with an array (or std::vector<value>)
      * @param x the array to store in the value
      **/
-    value(array const& x)
-      : _value(new detail::array_wrapper(x))
-      , _type(JSON_ARRAY)
-      {}
+    value(array const &x)
+        : _value(new detail::array_wrapper(x))
+        , _type(JSON_ARRAY)
+    {
+    }
 
     /**
      * Construct a value with an @ref arraylike object
      * @param x the array to store in the value
      **/
-    value(arraylike const& x)
-      : _value(new detail::array_wrapper(x))
-      , _type(JSON_ARRAY)
-      {}
-
+    value(arraylike const &x)
+        : _value(new detail::array_wrapper(x))
+        , _type(JSON_ARRAY)
+    {
+    }
 
     ////////////////////////////////////////// Bool
     /**
@@ -434,10 +475,10 @@ class value {
      * @param x the bool to store in the value
      **/
     value(bool x)
-      : _value(new detail::bool_wrapper(x))
-      , _type(JSON_BOOL)
-      {}
-
+        : _value(new detail::bool_wrapper(x))
+        , _type(JSON_BOOL)
+    {
+    }
 
     ////////////////////////////////////////// Number
     /**
@@ -445,112 +486,122 @@ class value {
      * @param x The floating-point value to store as a number
      **/
     value(double x)
-      : _value(new detail::number_wrapper(x))
-      , _type(JSON_NUMBER)
-      {}
+        : _value(new detail::number_wrapper(x))
+        , _type(JSON_NUMBER)
+    {
+    }
 
     /**
      * Construct a value with an integral value
      * @param x The integral value to store as a number
      **/
     value(int x)
-      : _value(new detail::number_wrapper(x))
-      , _type(JSON_NUMBER)
-      {}
+        : _value(new detail::number_wrapper(x))
+        , _type(JSON_NUMBER)
+    {
+    }
 
     ////////////////////////////////////////// Object
     /**
      * Construct a value with a json object (or std::map<string, value>)
      * @param x The object to store in the value
      **/
-    value(object const& x)
-      : _value(new detail::object_wrapper(x))
-      , _type(JSON_OBJECT)
-      {}
+    value(object const &x)
+        : _value(new detail::object_wrapper(x))
+        , _type(JSON_OBJECT)
+    {
+    }
 
     /**
      * Construct a value with an @ref objectlike object
      * @param x The object to store in the value
      **/
-    value(objectlike const& x)
-      : _value(new detail::object_wrapper(x))
-      , _type(JSON_OBJECT)
-      {}
-
+    value(objectlike const &x)
+        : _value(new detail::object_wrapper(x))
+        , _type(JSON_OBJECT)
+    {
+    }
 
     ////////////////////////////////////////// String
     /**
      * Construct a value with a string
      * @param x The string to store in the value
      **/
-    value(string const& x)
-      : _value(new detail::string_wrapper(x))
-      , _type(JSON_STRING)
-      {}
+    value(string const &x)
+        : _value(new detail::string_wrapper(x))
+        , _type(JSON_STRING)
+    {
+    }
 
     /**
      * Construct a value with a null-terminated C-string
      * @param x The string to store in the value
      **/
-    value(const char * const& x)
-      : _value(new detail::string_wrapper(x))
-      , _type(JSON_STRING)
-      {}
+    value(const char *const &x)
+        : _value(new detail::string_wrapper(x))
+        , _type(JSON_STRING)
+    {
+    }
 
     /**
      * Construct a value with a @ref stringlike object
      * @param x The string to store in the value
      **/
-    value(stringlike const& x)
-      : _value(new detail::string_wrapper(x))
-      , _type(JSON_STRING)
-      {}
+    value(stringlike const &x)
+        : _value(new detail::string_wrapper(x))
+        , _type(JSON_STRING)
+    {
+    }
 
-  public:
-    virtual ~value(){}
+public:
+    virtual ~value() {}
 
     /**
      * Copy constructor
      * @param v the value to copy
      **/
-    value(value const& v)
-      : _value(v._value)
-      , _type(v._type)
-      {}
+    value(value const &v)
+        : _value(v._value)
+        , _type(v._type)
+    {
+    }
 
     /**
      * Copy assignment operator
      * @param v the value to copy
      * @return a reference to this object
      **/
-    inline value& operator=(value const& v) {
-      _value = v._value;
-      _type = v._type;
-      return *this;
+    inline value &operator=(value const &v)
+    {
+        _value = v._value;
+        _type = v._type;
+        return *this;
     }
 
-  public:
+public:
     /**
      * @return the value represented in json string form
      **/
-    inline string json() const {
-      return _value->json();
+    inline string json() const
+    {
+        return _value->json();
     }
 
     /**
      * @return the json @ref ValueType of the value
      */
-    inline ValueType type() const {
-      return _type;
+    inline ValueType type() const
+    {
+        return _type;
     }
 
     /**
      * @return true if the value represents an array
      **/
     inline bool is_array() const { return _value->is_array(); }
-    array const& get_array() const { return _value->get_array(); }
-    array& get_array() { return _value->get_array(); }
-    explicit operator array&() { return _value->get_array(); } 
+    array const &get_array() const { return _value->get_array(); }
+    array &get_array() { return _value->get_array(); }
+    explicit operator array &() { return _value->get_array(); }
 
     /**
      * @return true if the value represents a bool
@@ -568,252 +619,310 @@ class value {
      * @return true if the value represents a number
      **/
     inline bool is_number() const { return _value->is_number(); }
-    number const& get_number() const { return _value->get_number(); }
-    number& get_number() { return _value->get_number(); }
+    number const &get_number() const { return _value->get_number(); }
+    number &get_number() { return _value->get_number(); }
 
     /**
      * @return true if the value represents an object
      **/
     inline bool is_object() const { return _value->is_object(); }
-    object const& get_object() const { return _value->get_object(); }
-    object& get_object() { return _value->get_object(); }
+    object const &get_object() const { return _value->get_object(); }
+    object &get_object() { return _value->get_object(); }
 
     /**
      * @return true if the value represents a string
      **/
     inline bool is_string() const { return _value->is_string(); }
-    string const& get_string() const { return _value->get_string(); }
-    string& get_string() { return _value->get_string(); }
-
+    string const &get_string() const { return _value->get_string(); }
+    string &get_string() { return _value->get_string(); }
 };
-
 
 /**
  * @brief Put a json @ref value to an ostream object as json
  **/
-inline 
-std::ostream& operator<<(std::ostream& o, value const& v){
-  o << v.json();
-  return o;
+inline std::ostream &operator<<(std::ostream &o, value const &v)
+{
+    o << v.json();
+    return o;
 }
-
 
 /**
  * @brief Put a json @ref array to an output stream as json
  **/
-inline
-std::ostream& operator<<(std::ostream& o, array const& v){
+inline std::ostream &operator<<(std::ostream &o, array const &v)
+{
 
-  size_t size { v.size() }, count { 0 };  
-  o << "[";
-  for(auto const& i : v) {
-    o << i.json();
-    o << detail::comma_branch[++count < size];
-  }
-  o << "]";
+    size_t size{ v.size() }, count{ 0 };
+    o << "[";
+    for (auto const &i : v)
+    {
+        o << i.json();
+        o << detail::comma_branch[++count < size];
+    }
+    o << "]";
 
-  return o;
+    return o;
 }
-
 
 /**
  * @brief Put a json @ref object to an output stream as json
  */
-inline
-std::ostream& operator<<(std::ostream& o, object const& v){
+inline std::ostream &operator<<(std::ostream &o, object const &v)
+{
 
-  size_t size { v.size() }, count { 0 };
+    size_t size{ v.size() }, count{ 0 };
 
-  o << "{";
-  for(auto const& i : v) {
-    o << "\"" << escape(i.first) << "\": ";
-    o << i.second;
-    o << detail::comma_branch[++count < size];
-  }
-  o << "}";
+    o << "{";
+    for (auto const &i : v)
+    {
+        o << "\"" << escape(i.first) << "\": ";
+        o << i.second;
+        o << detail::comma_branch[++count < size];
+    }
+    o << "}";
 
-  return o;
+    return o;
 }
-
 
 /**
  * @cond detail
  **/
-namespace detail {
+namespace detail
+{
 
-inline bool is_whitespace(char c) {
-  return c == ' '
-      || c == '\r'
-      || c == '\n'
-      || c == '\t';
+inline bool is_whitespace(char c)
+{
+    return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
 
-template<typename Iterator>
-value parse(Iterator&, Iterator const&);
+template <typename Iterator>
+value parse(Iterator &, Iterator const &);
 
-template<typename Iterator>
-array parse_array(Iterator& cur, Iterator const& end) {
-  array rv;
-  bool accept = true, has_elements = false;
-  do {
-    if(is_whitespace(*cur)) {
-      continue;
-    } else if(*cur == ']' && (has_elements ^ accept)) {
-      // !accept = strict (no trailing commas)
-      return rv;
-    } else if(accept) {
-      rv.push_back(parse(cur, end));
-      has_elements = true;
-      accept = false;
-    } else if(*cur == ',') {
-      accept = true;
-    } else {
-      break;
+template <typename Iterator>
+array parse_array(Iterator &cur, Iterator const &end)
+{
+    array rv;
+    bool accept = true, has_elements = false;
+    do
+    {
+        if (is_whitespace(*cur))
+        {
+            continue;
+        }
+        else if (*cur == ']' && (has_elements ^ accept))
+        {
+            // !accept = strict (no trailing commas)
+            return rv;
+        }
+        else if (accept)
+        {
+            rv.push_back(parse(cur, end));
+            has_elements = true;
+            accept = false;
+        }
+        else if (*cur == ',')
+        {
+            accept = true;
+        }
+        else
+        {
+            break;
+        }
+    } while (++cur != end);
+    throw exception("bad array");
+}
+
+template <typename Iterator>
+value parse_number(Iterator &cur, Iterator const &end)
+{
+    std::stringstream io;
+    do
+    {
+        io << *cur;
+        auto next = cur + 1;
+        if (!isdigit(*next) && *next != '-' && *next != '.' && *next != 'e' && *next != 'E' && *next != '+')
+        {
+            break;
+        }
+    } while (++cur != end);
+    io.seekg(0);
+    double d = 0;
+    io >> d;
+    return d;
+}
+
+template <typename Iterator>
+string parse_string(Iterator &cur, Iterator const &end)
+{
+    string rv;
+    for (bool esc = false; cur != end; ++cur)
+    {
+        if (*cur == '"' && !esc)
+            return rv;
+        esc = *cur == '\\' && !esc;
+        if (!esc)
+            rv += *cur;
     }
-  } while(++cur != end);
-  throw exception("bad array");
+    throw exception(string("bad string: ") + rv);
 }
 
-template<typename Iterator>
-value parse_number(Iterator& cur, Iterator const& end) {
-  std::stringstream io;
-  do {
-    io << *cur;
-    auto next = cur + 1;
-    if (!isdigit(*next) && *next != '-' && *next != '.' && *next != 'e' && *next != 'E' && *next != '+') {
-      break;
-    }
-  } while (++cur != end);
-  io.seekg(0);
-  double d = 0;
-  io >> d;
-  return d;
+template <typename Iterator>
+object parse_object(Iterator &cur, Iterator const &end)
+{
+    object rv;
+    string key;
+    bool got_key = false, got_elements = false;
+    do
+    {
+        if (*cur == '}' && !got_key)
+        {
+            return rv;
+        }
+        else if (is_whitespace(*cur))
+        {
+            continue;
+        }
+        else if (*cur == '"')
+        {
+            key = parse_string(++cur, end);
+            got_key = true;
+        }
+        else if (got_key && *cur == ':')
+        {
+            rv[key] = parse(++cur, end);
+            got_key = false;
+            got_elements = true;
+        }
+        else if (got_elements && !got_key && *cur == ',')
+        {
+            continue;
+        }
+        else
+        {
+            break;
+        }
+    } while (++cur != end);
+    throw exception("bad object");
 }
 
-template<typename Iterator>
-string parse_string(Iterator& cur, Iterator const& end) {
-  string rv;
-  for(bool esc = false; cur != end; ++cur){
-    if(*cur == '"' && !esc)
-      return rv; 
-    esc = *cur == '\\' && !esc;
-    if (!esc)
-      rv += *cur;
-  }
-  throw exception(string("bad string: ") + rv);
+template <typename Iterator>
+value parse(Iterator &cur, Iterator const &end)
+{
+    do
+    {
+        switch (*cur)
+        {
+        case '"':
+            return parse_string(++cur, end);
+        case '[':
+            return parse_array(++cur, end);
+        case '{':
+            return parse_object(++cur, end);
+        case '0' ... '9':
+        case '-':
+            return parse_number(cur, end);
+        case 'n':
+            if (*++cur == 'u' && *++cur == 'l' && *++cur == 'l')
+                return value();
+            throw exception("bad json: null");
+        case 't':
+            if (*++cur == 'r' && *++cur == 'u' && *++cur == 'e')
+                return true;
+            throw exception(string("bad json: ") + *cur);
+        case 'f':
+            if (*++cur == 'a' && *++cur == 'l' && *++cur == 's' && *++cur == 'e')
+                return false;
+            throw exception("bad json: false");
+        case ' ':
+        case '\r':
+        case '\n':
+        case '\t':
+            ++cur;
+            continue;
+        default:
+            throw exception("bad json");
+        }
+    } while (cur != end);
+    throw exception("bad json");
 }
 
-template<typename Iterator>
-object parse_object(Iterator& cur, Iterator const& end) {
-  object rv;
-  string key;
-  bool got_key = false, got_elements = false;
-  do {
-    if (*cur == '}' && !got_key) {
-      return rv;
-    } else if(is_whitespace(*cur)) {
-      continue;
-    } else if(*cur == '"') {
-      key = parse_string(++cur, end);
-      got_key = true;
-    } else if(got_key && *cur == ':') {
-      rv[key] = parse(++cur, end);
-      got_key = false;
-      got_elements = true;
-    } else if(got_elements && !got_key && *cur == ',') {
-      continue;
-    } else {
-      break;
-    }
-  } while(++cur != end);
-  throw exception("bad object");
-}
-
-template<typename Iterator>
-value parse(Iterator& cur, Iterator const& end) {
-  do {
-    switch(*cur){
-      case '"': return parse_string(++cur, end);
-      case '[': return parse_array(++cur, end);
-      case '{': return parse_object(++cur, end);
-      case '0' ... '9': case '-': return parse_number(cur, end);
-      case 'n': if(*++cur=='u' && *++cur=='l' && *++cur=='l') return value(); throw exception("bad json: null");
-      case 't': if(*++cur=='r' && *++cur=='u' && *++cur=='e') return true; throw exception(string("bad json: ") + *cur);
-      case 'f': if(*++cur=='a' && *++cur=='l' && *++cur=='s' && *++cur=='e') return false; throw exception("bad json: false");
-      case ' ': case '\r': case '\n': case '\t':
-        ++cur;
-        continue;
-      default:
-        throw exception("bad json");
-    }
-  } while(cur != end);
-  throw exception("bad json");
-}
-
-template<typename T>
-class peek {
-  private:
+template <typename T>
+class peek
+{
+private:
     T v;
 
-  public:
-    peek(T v):v(v){}
-    T operator*() const {
-      return v;
+public:
+    peek(T v)
+        : v(v)
+    {
+    }
+    T operator*() const
+    {
+        return v;
     }
 };
 
-template<typename T>
-class iterator {
-  private:
-    std::basic_istream<T>& istream;
+template <typename T>
+class iterator
+{
+private:
+    std::basic_istream<T> &istream;
     T cur_val;
 
-  public:
-    iterator(std::basic_istream<T>& is):istream(is), cur_val(is.get()){}
-
-    iterator& operator++(){
-      istream.get(cur_val);
-      return *this;
+public:
+    iterator(std::basic_istream<T> &is)
+        : istream(is)
+        , cur_val(is.get())
+    {
     }
 
-    T operator*() const {
-      return cur_val;
+    iterator &operator++()
+    {
+        istream.get(cur_val);
+        return *this;
     }
 
-    peek<T> operator+(int i) const {
-      // Assumes you are peeking
-      return istream.peek();
+    T operator*() const
+    {
+        return cur_val;
+    }
+
+    peek<T> operator+(int i) const
+    {
+        // Assumes you are peeking
+        return istream.peek();
     };
 
-    bool operator!=(iterator const& other) const {
-      // Assumes you are checking against the end iterator
-      return istream.good();
+    bool operator!=(iterator const &other) const
+    {
+        // Assumes you are checking against the end iterator
+        return istream.good();
     }
 };
 
-
-inline
-string array_wrapper::json() const
+inline string array_wrapper::json() const
 {
-  std::stringstream ss;
-  ss << *_value;
-  return ss.str();
+    std::stringstream ss;
+    ss << *_value;
+    return ss.str();
 }
 
-inline
-string object_wrapper::json() const
+inline string object_wrapper::json() const
 {
-  std::stringstream ss;
-  ss << *_value;
-  return ss.str();
+    std::stringstream ss;
+    ss << *_value;
+    return ss.str();
 }
 
-inline object const& object_wrapper::get_object() const {
-  return *_value;
+inline object const &object_wrapper::get_object() const
+{
+    return *_value;
 }
 
-inline object& object_wrapper::get_object() {
-  return *_value;
+inline object &object_wrapper::get_object()
+{
+    return *_value;
 }
 
 } // namespace detail
@@ -821,26 +930,25 @@ inline object& object_wrapper::get_object() {
  * @endcond detail
  **/
 
-
 /**
  * @brief parse json into a @ref value
  * @param s the well-formed json to parse
  * @return the parsed json as a @ref value
  * @throw @ref exception if parsing failed
  **/
-inline
-value parse(string const& s){
-  auto i = s.begin(), e = s.end();
-  auto v = detail::parse(i, e);
+inline value parse(string const &s)
+{
+    auto i = s.begin(), e = s.end();
+    auto v = detail::parse(i, e);
 
-  while(++i != e) {
-    if(!detail::is_whitespace(*i))
-      throw exception(string("garbage at end of input: ") + *i);
-  }
+    while (++i != e)
+    {
+        if (!detail::is_whitespace(*i))
+            throw exception(string("garbage at end of input: ") + *i);
+    }
 
-  return v;
+    return v;
 }
-
 
 /**
  * @brief parse json from an input stream
@@ -848,22 +956,84 @@ value parse(string const& s){
  * @return the parsed json as a @ref value
  * @throw @ref exception if parsing failed
  **/
+template <typename T>
+value parse(std::basic_istream<T> &istream)
+{
+    detail::iterator<T> i(istream);
+    detail::iterator<T> &e = i;
+    auto v = detail::parse(i, e);
+
+    while (++i != e)
+    {
+        if (!detail::is_whitespace(*i))
+            throw exception(string("garbage at end of input: ") + *i);
+    }
+
+    return v;
+}
+
 template<typename T>
-value parse(std::basic_istream<T>& istream){
-  detail::iterator<T> i (istream);
-  detail::iterator<T>& e = i;
-  auto v = detail::parse(i, e);
+struct info;
 
-  while(++i != e) {
-    if(!detail::is_whitespace(*i))
-      throw exception(string("garbage at end of input: ") + *i);
-  }
+#define SPECIALIZE_INFO(TYPE, JSON_NAME) \
+    template<> \
+    struct info<TYPE> \
+    { \
+        static bool is(value const &source) \
+        { \
+            return source.is_##JSON_NAME();\
+        } \
+        \
+        static bool get(value const &source, TYPE &value_out) \
+        { \
+            if (is(source)) \
+            { \
+                value_out = source.get_##JSON_NAME(); \
+                return true; \
+            } \
+            return false; \
+        } \
+    };
 
-  return v;
+
+SPECIALIZE_INFO(string, string);
+SPECIALIZE_INFO(float, number);
+SPECIALIZE_INFO(double, number);
+SPECIALIZE_INFO(int8_t, number);
+SPECIALIZE_INFO(int16_t, number);
+SPECIALIZE_INFO(int32_t, number);
+SPECIALIZE_INFO(int64_t, number);
+SPECIALIZE_INFO(uint8_t, number);
+SPECIALIZE_INFO(uint16_t, number);
+SPECIALIZE_INFO(uint32_t, number);
+SPECIALIZE_INFO(uint64_t, number);
+
+#undef SPECIALIZE_IS
+
+template<typename T>
+bool get(value const &source, T &value_out)
+{
+    return info<T>::get(source, value_out);
+}
+
+template<typename T>
+bool get_member(value const &source, string const &key, T &value_out)
+{
+    if (!source.is_object())
+    {
+        return false;
+    }
+
+    auto const &object = source.get_object();
+    auto it = object.find(key);
+    if (it == object.end())
+    {
+        return false;
+    }
+    return info<T>::get(it->second, value_out);
 }
 
 
 } // namespace json
-
 
 #endif
